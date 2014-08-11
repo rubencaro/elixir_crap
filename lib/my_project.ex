@@ -1,12 +1,15 @@
 defmodule MyProject do
-	use Application
+  use Application
 
-	def start(_type, _args) do
-		import Supervisor.Spec, warn: false
+  def start(_type, _args) do
+    
+    :emysql.add_pool(:db, [ size: 50, user: 'root', password: 'dbPASS', database: 'test_elixur', encoding: :utf8 ])
 
-		children = [ worker(MyProject.Plug, []) ]
+    import Supervisor.Spec, warn: false
 
-		opts = [strategy: :one_for_one, name: MyProject.Supervisor]
+    children = [ worker(MyProject.Plug, []) ]
+
+    opts = [strategy: :one_for_one, name: MyProject.Supervisor]
     Supervisor.start_link(children, opts)
   end
 end
@@ -19,15 +22,15 @@ defmodule MyProject.Plug do
   plug :dispatch
 
   def start_link() do
-		IO.puts "hey2"
+    ["Running ", :bright, "MyProject", :reset, " on ", :green, "http://localhost:4000", :reset]
+    |> IO.ANSI.format(true) |> IO.puts
 
-		"Running %{bright}MyProject%{reset} on %{green}http://localhost:4000%{reset}"
-		|> IO.ANSI.escape |> IO.puts
-
-		Plug.Adapters.Cowboy.http __MODULE__, []
+    Plug.Adapters.Cowboy.http __MODULE__, []
   end
 
   get "/hello" do
+    result = :emysql.execute :db, "select sleep(2)" 
+    IO.puts( inspect result )
     send_resp(conn, 200, "world")
   end
 
